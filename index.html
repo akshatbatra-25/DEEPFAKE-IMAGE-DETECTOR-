@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Deepfake Detector</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            background: #0a0a0a;
+            color: #fff;
+        }
+
+        /* Animated 3D Background */
+        .bg-animation {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background: linear-gradient(45deg, #0a0a0a, #1a1a2e, #16213e);
+            overflow: hidden;
+        }
+
+        .cube {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            animation: float 20s infinite ease-in-out;
+            transform-style: preserve-3d;
+        }
+
+        .cube:before, .cube:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid rgba(255, 0, 255, 0.3);
+        }
+
+        .cube:before {
+            transform: rotateY(90deg) translateZ(50px);
+        }
+
+        .cube:after {
+            transform: rotateX(90deg) translateZ(50px);
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) rotateX(0deg) rotateY(0deg);
+            }
+            25% {
+                transform: translateY(-100px) rotateX(180deg) rotateY(90deg);
+            }
+            50% {
+                transform: translateY(-200px) rotateX(360deg) rotateY(180deg);
+            }
+            75% {
+                transform: translateY(-100px) rotateX(540deg) rotateY(270deg);
+            }
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(0, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: particle-float 15s infinite linear;
+        }
+
+        @keyframes particle-float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        /* Navigation Bar */
+      /* Navigation Bar - Cylindrical Glassmorphism with Path-Following RGB Border */
+nav {
+    position: fixed;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    animation: navSlideDown 0.8s ease;
+}
+
+@keyframes navSlideDown {
+    from {
+        top: -100px;
+        opacity: 0;
+    }
+    to {
+        top: 30px;
+        opacity: 1;
+    }
+}
+
+.nav-container {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 100px;
+    padding: 8px 15px;
+    position: relative;
+    overflow: visible;
+    box-shadow: 
+        0 8px 32px rgba(0, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+}
+
+/* Animated Border Gradient - Travels along the edge */
+.nav-container::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 100px;
+    padding: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 20%,
+        #00ffff 25%,
+        #00ccff 27%,
+        #0099ff 29%,
+        transparent 32%,
+        transparent 100%
+    );
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: travelBorder 3s linear infinite;
+    background-size: 300% 100%;
+}
+
+/* Second traveling light - opposite color */
+.nav-container::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 100px;
+    padding: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 60%,
+        #ff00ff 65%,
+        #ff0099 67%,
+        #cc0099 69%,
+        transparent 72%,
+        transparent 100%
+    );
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: travelBorder 3s linear infinite;
+    background-size: 300% 100%;
+}
+
+/* Animation that moves the gradient along the border path */
+@keyframes travelBorder {
+    0% {
+        background-position: 0% 0%;
+    }
+    100% {
+        background-position: 300% 0%;
+    }
+}
+
+/* Outer glow that follows the lights */
+.nav-glow {
+    position: absolute;
+    inset: -6px;
+    border-radius: 100px;
+    pointer-events: none;
+    z-index: -1;
+    padding: 4px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        transparent 20%,
+        rgba(0, 255, 255, 0.4) 25%,
+        rgba(0, 204, 255, 0.4) 27%,
+        transparent 32%,
+        transparent 60%,
+        rgba(255, 0, 255, 0.4) 65%,
+        rgba(255, 0, 153, 0.4) 67%,
+        transparent 72%,
+        transparent 100%
+    );
+    -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    filter: blur(12px);
+    animation: travelBorder 3s linear infinite;
+    background-size: 300% 100%;
+}
+
+/* Shine sweep effect */
+.nav-shine {
+    position: absolute;
+    inset: 0;
+    border-radius: 100px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.nav-shine::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -100%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.08) 50%,
+        transparent 100%
+    );
+    animation: shine 6s ease-in-out infinite;
+}
+
+@keyframes shine {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+nav ul {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    list-style: none;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    z-index: 3;
+}
+
+nav ul li {
+    position: relative;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 12px 28px;
+    border-radius: 50px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1;
+    background: transparent;
+}
+
+nav ul li a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        135deg,
+        rgba(0, 255, 255, 0.2),
+        rgba(255, 0, 255, 0.2)
+    );
+    border-radius: 50px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: -1;
+}
+
+nav ul li a::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(0, 255, 255, 0.4),
+        transparent
+    );
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+    z-index: -1;
+}
+
+nav ul li a:hover::before {
+    opacity: 1;
+}
+
+nav ul li a:hover::after {
+    width: 300px;
+    height: 300px;
+}
+
+nav ul li a:hover {
+    color: #ffffff;
+    transform: translateY(-2px);
+    text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+    box-shadow: 
+        0 5px 15px rgba(0, 255, 255, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+nav ul li a i {
+    font-size: 18px;
+    transition: transform 0.4s ease;
+}
+
+nav ul li a:hover i {
+    transform: scale(1.2) rotate(10deg);
+}
+
+/* Active state */
+nav ul li a.active {
+    background: linear-gradient(
+        135deg,
+        rgba(0, 255, 255, 0.3),
+        rgba(255, 0, 255, 0.3)
+    );
+    color: #ffffff;
+    box-shadow: 
+        0 5px 20px rgba(0, 255, 255, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 0 20px rgba(0, 255, 255, 0.2);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+nav ul li a.active::before {
+    opacity: 1;
+}
+
+/* Glow effect for active item */
+nav ul li a.active {
+    animation: activeGlow 2s ease-in-out infinite;
+}
+
+@keyframes activeGlow {
+    0%, 100% {
+        box-shadow: 
+            0 5px 20px rgba(0, 255, 255, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3),
+            0 0 20px rgba(0, 255, 255, 0.2);
+    }
+    50% {
+        box-shadow: 
+            0 5px 30px rgba(0, 255, 255, 0.6),
+            inset 0 1px 0 rgba(255, 255, 255, 0.4),
+            0 0 30px rgba(0, 255, 255, 0.4);
+    }
+}
+
+/* Responsive Design for Navigation */
+@media (max-width: 768px) {
+    nav {
+        top: 15px;
+        width: 95%;
+    }
+
+    .nav-container {
+        padding: 6px 10px;
+    }
+
+    nav ul {
+        gap: 5px;
+    }
+
+    nav ul li a {
+        padding: 10px 18px;
+        font-size: 14px;
+    }
+
+    nav ul li a i {
+        font-size: 16px;
+    }
+
+    nav ul li a span {
+        display: none;
+    }
+
+    nav ul li a {
+        gap: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    nav ul li a {
+        padding: 10px 15px;
+    }
+}
+        /* Main Content */
+        .content {
+            margin-top: 100px;
+            padding: 40px 20px;
+            min-height: calc(100vh - 100px);
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+            animation: fadeInUp 1s ease;
+        }
+
+        .hero h1 {
+            font-size: 72px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #00ffff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient 3s ease infinite;
+            margin-bottom: 20px;
+            font-weight: 800;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .hero p {
+            font-size: 24px;
+            color: #00ffff;
+            margin-bottom: 40px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 18px 50px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: bold;
+            transition: all 0.4s ease;
+            box-shadow: 0 10px 40px rgba(0, 255, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .cta-button:hover:before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(255, 0, 255, 0.6);
+        }
+
+        /* Features Section */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            max-width: 1200px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card:before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: 0.5s;
+        }
+
+        .feature-card:hover:before {
+            top: -60%;
+            left: -60%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: #00ffff;
+            box-shadow: 0 20px 60px rgba(0, 255, 255, 0.4);
+        }
+
+        .feature-card i {
+            font-size: 50px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: #00ffff;
+        }
+
+        .feature-card p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+
+        /* Info Section */
+        .info-section {
+            max-width: 1000px;
+            margin: 80px auto;
+            padding: 60px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            border: 2px solid rgba(255, 0, 255, 0.3);
+        }
+
+        .info-section h2 {
+            font-size: 48px;
+            color: #ff00ff;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+
+        .info-section p {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #ddd;
+            margin-bottom: 20px;
+            text-align: justify;
+        }
+
+        /* Stats Section */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 60px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-item .number {
+            font-size: 56px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .stat-item .label {
+            font-size: 18px;
+            color: #aaa;
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(10, 10, 10, 0.95);
+            padding: 30px;
+            text-align: center;
+            border-top: 2px solid rgba(0, 255, 255, 0.5);
+            margin-top: 50px;
+        }
+
+        footer p {
+            color: #00ffff;
+            font-size: 14px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 42px;
+            }
+            
+            .hero p {
+                font-size: 18px;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            nav ul {
+                gap: 20px;
+            }
+
+            nav ul li a {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation" id="bgAnimation">
+        <div class="cube" style="top: 10%; left: 10%; animation-delay: 0s;"></div>
+        <div class="cube" style="top: 60%; left: 80%; animation-delay: 5s;"></div>
+        <div class="cube" style="top: 40%; left: 50%; animation-delay: 10s;"></div>
+    </div>
+
+    <!-- Navigation -->
+    <!-- Navigation -->
+<nav>
+    <div class="nav-glow"></div>
+    <div class="nav-container">
+        <div class="nav-shine"></div>
+        <ul>
+            <li><a href="/" class="active">
+                <i class="fas fa-home"></i>
+                <span>Home</span>
+            </a></li>
+            <li><a href="/predict">
+                <i class="fas fa-brain"></i>
+                <span>Predict</span>
+            </a></li>
+        </ul>
+    </div>
+</nav>
+
+    <!-- Main Content -->
+    <div class="content">
+        <div class="hero fade-in">
+            <h1>DEEPFAKE IMAGE DETECTOR</h1>
+            <p>Advanced AI-Powered Truth Verification</p>
+            <a href="/predict" class="cta-button">
+    <span style="position: relative; z-index: 1;">Start Detection <i class="fas fa-arrow-right"></i></span>
+</a>
+        </div>
+
+        <div class="features">
+            <div class="feature-card fade-in" style="animation-delay: 0.2s;">
+                <i class="fas fa-shield-alt"></i>
+                <h3>81% Accuracy</h3>
+                <p>Our advanced neural network model achieves industry-leading accuracy in detecting manipulated images and videos.</p>
+            </div>
+            
+            <div class="feature-card fade-in" style="animation-delay: 0.4s;">
+                <i class="fas fa-bolt"></i>
+                <h3>Real-Time Analysis</h3>
+                <p>Get instant results with our optimized detection algorithm that processes images in milliseconds.</p>
+            </div>
+            
+            <div class="feature-card fade-in" style="animation-delay: 0.6s;">
+                <i class="fas fa-lock"></i>
+                <h3>Secure & Private</h3>
+                <p>Your data is encrypted and never stored. We prioritize your privacy and security above all.</p>
+            </div>
+        </div>
+
+        <div class="info-section fade-in">
+            <h2>What are Deepfakes?</h2>
+            <p>
+                Deepfakes are synthetic media in which a person in an existing image or video is replaced with someone else's likeness using artificial neural networks. The term "deepfake" is a combination of "deep learning" and "fake," referring to the AI technology used to create these manipulations.
+            </p>
+            <p>
+                These AI-generated forgeries have become increasingly sophisticated and harder to detect with the naked eye. They pose significant threats to personal privacy, national security, and the integrity of information in our digital age.
+            </p>
+            <p>
+                Our cutting-edge detection system uses state-of-the-art deep learning algorithms to analyze facial features, expressions, and subtle inconsistencies that are often invisible to human observers. We help protect individuals, organizations, and society from the dangers of manipulated media.
+            </p>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="number">500K+</div>
+                    <div class="label">Images Analyzed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number">81%</div>
+                    <div class="label">Detection Rate</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number">&lt;2s</div>
+                    <div class="label">Average Time</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section fade-in">
+            <h2>How Our Technology Works</h2>
+            <p>
+                <strong>1. Image Upload:</strong> You upload an image that you want to verify for authenticity.
+            </p>
+            <p>
+                <strong>2. AI Analysis:</strong> Our convolutional neural network analyzes multiple layers of the image, looking for manipulation artifacts, inconsistent lighting, unnatural facial features, and pixel-level anomalies.
+            </p>
+            <p>
+                <strong>3. Pattern Recognition:</strong> The model compares patterns against millions of real and fake images in our training database.
+            </p>
+            <p>
+                <strong>4. Confidence Score:</strong> You receive a detailed report with probability scores indicating whether the image is authentic or manipulated.
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Deepfake Detector | Protecting Truth with AI</p>
+    </footer>
+
+    <script>
+        // Generate particles
+        const bgAnimation = document.getElementById('bgAnimation');
+        for(let i = 0; i < 50; i++) {
+            let particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            bgAnimation.appendChild(particle);
+        }
+
+        // Intersection Observer for scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+    <script>
+    // Check if user is logged in and update nav
+    window.addEventListener('load', function() {
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const currentUser = localStorage.getItem('currentUser');
+
+        if(isLoggedIn === 'true' && currentUser) {
+            // Update nav button to Dashboard
+            document.getElementById('navIcon').className = 'fas fa-tachometer-alt';
+            document.getElementById('navText').textContent = 'Dashboard';
+            document.getElementById('navLoginLink').href = '/login#dashboard';
+        }
+    });
+</script>
+</body>
+</html>
